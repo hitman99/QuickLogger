@@ -1,0 +1,1 @@
+QuickLogger - a lightweight, thread-safe performance logging library written in pure C++11
