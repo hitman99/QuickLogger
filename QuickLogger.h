@@ -10,11 +10,7 @@
 #include <string>
 #include <memory>
 using namespace std;
-/*
- To Do:
- implement log levels
- * 
- */
+
 class QuickLogger {
 public:
     /**
