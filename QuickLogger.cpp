@@ -28,7 +28,7 @@ using namespace std::chrono;
 // Actual IMPLementation class 
 class QuickLogger::impl {
 public:
-    impl(string path, string name, string rolloverperiod);
+    impl(string path, string name, string time_format, string rolloverperiod);
     ~impl();
     void Log(const string *message, 
              const string *loglevel, 
@@ -46,8 +46,10 @@ private:
     // variables
     // path where log file(s) will be stored
     string path;
-    // log name, result will be: QL_<name>_YYYYMMDDHHmmSS.log.csv
+    // log name, result will be: QL_<name>_<time_format>.log.csv
     string name;
+    // time_format in the filename
+    string time_format;
     // absolute filename
     string filename;
     // order in which messages are written in the file
@@ -136,13 +138,14 @@ private:
 };
 //--------------------------------------------------------------------------
 //Interface wrapper
-QuickLogger::QuickLogger(string path, string name, string rolloverperiod) : 
-        PrivateImpl( new impl(path, name, rolloverperiod)) { }
+QuickLogger::QuickLogger(string path, string name, string time_format, string rolloverperiod) : 
+        PrivateImpl( new impl(path, name, time_format, rolloverperiod)) { }
 // Actual constructor
-QuickLogger::impl::impl(string path, string name, string rolloverperiod) :
+QuickLogger::impl::impl(string path, string name, string time_format, string rolloverperiod) :
         // initialization list
         path(path),
         name(name),
+        time_format(time_format),
         rolloverperiod(rolloverperiod),
         flushfrequency(10),
         thread_stop(false),
@@ -315,9 +318,12 @@ void QuickLogger::impl::Autorollover(){
             /* not locking ofstream mutex here, because DirectLog locks 
              * it internally
              */ 
+            /* 
+                UNCOMMENT THIS TO ENABLE BUFFER OVERFLOW LOGGING TO THE FILES
+             */
             // store current buffer overflow counter in the file
-            this->DirectLog("Buffer overflows for this file: " + 
-                             this->stringify(this->bufferoverflowcount.load()));
+            //this->DirectLog("Buffer overflows for this file: " + 
+            //                 this->stringify(this->bufferoverflowcount.load()));
             // reset buffer overflows for this file
             this->bufferoverflowcount.store(0);
             // lock ofstream mutex
@@ -364,8 +370,8 @@ void QuickLogger::impl::Flush(){
     //redirect flow back to the primary buffer
     this->redirectflow.store(false);
     this->SinkPipe(&secondarybuffer);
-    this->DirectLog("Buffer overflows for this file: " + 
-                             this->stringify(this->bufferoverflowcount.load()));
+    //this->DirectLog("Buffer overflows for this file: " + 
+    //                         this->stringify(this->bufferoverflowcount.load()));
     this->filehandle.close();
 }
 //--------------------------------------------------------------------------
@@ -376,7 +382,7 @@ void QuickLogger::impl::SinkPipe(queue<M> * buffer){
         p = this->loglevels.find(buffer->front().loglevel);
         // flushing only if log level is unknown, or enabled
         if(p == this->loglevels.end() || (*p).second){
-            // go through fieldorder vector and write message to the stream
+            // go through field order vector and write message to the stream
             // in the correct order
             try{
                 for(auto i = fieldorder.begin(); i != fieldorder.end(); i++){
@@ -417,7 +423,7 @@ void QuickLogger::impl::SinkPipe(queue<M> * buffer){
 }
 //--------------------------------------------------------------------------
 /**
- * Parses rolover period defined by rolloverperiod string.
+ * Parses rollover period defined by rolloverperiod string.
  * @return std::pair<int, iterator>
  *               first: interval multiplier 
  *              second: iterator for timeframes map
@@ -648,7 +654,7 @@ long QuickLogger::Getbufferoverflows(){
 //--------------------------------------------------------------------------
 void QuickLogger::impl::Generatefilename(){
     this->filename = this->path + "/QL_" + this->name + "_" + 
-                     this->GetTime("YMD") + ".log.csv";
+                     this->GetTime(this->time_format) + ".log.csv";
 }
 //--------------------------------------------------------------------------
 string QuickLogger::Getfilename(){

@@ -10,14 +10,27 @@
 #include <string>
 #include <memory>
 using namespace std;
-
+/*
+ To Do:
+ implement log levels
+ * 
+ */
 class QuickLogger {
 public:
     /**
      * Constructor. Any ofstream exceptions are written to stderr.
      * @param path - Required, path to the file. Could be absolute or relative.
      * @param name - File name. Note that the complete file name will be in
-     *   format QL_<name>_YYYYMMDDHHmmSS.log.csv
+     *   format QL_<name>_<time_format>.log.csv
+     * @param time_format - Time format. Default is YMDHm. Accepted placeholders are:
+     *   <Y> - 4 digit year
+     *   <M> - 2 digit month
+     *   <D> - 2 digit day of the month
+     *   <h> - 2 digit hour
+     *   <m> - 2 digit minute
+     *   <s> - 2 digit second
+     *   <l> - 6 digit microsecond
+     *       
      * @param rolloverperiod - Definition how often to rollover files. 
      *   Several format options are available as below
      *   -> Time-frame definitions. Available definitions are: 
@@ -44,6 +57,7 @@ public:
      */
     QuickLogger(string path, 
                 string name,
+                string time_format,
                 string rolloverperiod = "");
     /** 
      * QuickLogger object is not copyable, thus copy constructor is disabled. 
